@@ -9,7 +9,7 @@ const pokeArray = []
 
 async function getPokemon() {
 
-    for(let i = 1; i <= 10; i++){
+    for(let i = 26; i <= 500; i++){
         await axios.get(`https://pokeapi.co/api/v2/pokemon/${i}`)
         .then((poke) => {
 
@@ -65,6 +65,24 @@ async function getPokemon() {
         })
     }
 
+    for (let pokemon of pokeArray){
+
+        const flavor = await axios.get(`https://pokeapi.co/api/v2/pokemon-species/${pokemon.number}`).then((flavor) => {
+            
+            const flavorText = flavor.data.flavor_text_entries.find(({language: {name}}) => name === "en").flavor_text.replace(/\n|\f|\r/g," ")
+
+            const category = flavor.data.genera.find(({language: {name}}) => name === "en").genus
+
+            const generation = flavor.data.generation.name.split(/-/).pop().toUpperCase()
+
+            pokemon.category = category
+            pokemon['flavor-text'] = flavorText
+            pokemon.generation = generation
+
+            console.log(`Fetched flavor information for ${pokemon.name}.`)
+        })
+    }
+
     createNotionPage()
 }
 
@@ -109,6 +127,16 @@ async function createNotionPage() {
                 "Type": {
                     "multi_select": pokemon.types,
                 },
+                "Category": {"rich_text": [
+                    {
+                        "type": "text",
+                        "text":{
+                            "content": pokemon.category
+                        }
+                    }
+                ]
+            },
+                "Generation": {"select": {"name": pokemon.generation}},
                 "HP": { "number": pokemon.hp},
                 "Attack": { "number": pokemon.attack},
                 "Defense": { "number": pokemon.defense},
@@ -119,6 +147,34 @@ async function createNotionPage() {
                 "Weight": { "number": pokemon.weight},
             },
             "children": [
+                {
+                    "object": "block",
+                    "type": "quote",
+                    "quote": {
+                        "rich_text":[
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": pokemon['flavor-text']
+                                }
+                            }
+                        ]
+                    }
+                },
+                {
+                    "object": "block",
+                    "type": "paragraph",
+                    "paragraph": {
+                        "rich_text":[
+                            {
+                                "type": "text",
+                                "text": {
+                                    "content": ""
+                                }
+                            }
+                        ]
+                    }
+                },
                 {
                     "object": "block",
                     "type": "bookmark",
